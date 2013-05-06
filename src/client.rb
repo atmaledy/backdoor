@@ -5,7 +5,7 @@ require 'packetfu'
 
 
 
-@octet = PacketFu::Octets.new #object for string to ip_addr translation.
+ translation.
 # -----------------------------------------------------------------------------------------
 # print_usage()
 #
@@ -92,7 +92,7 @@ def recv_command_result(display = false)
                     if output.nil? then
                         output = packet.ip_id.to_s()
                     else #not nill
-                        respone << packet.ip_id.to_s()
+                        respone += packet.ip_id.to_s()
                     end 
             end #fin == 1
           end #ptk.tcp_dst 
