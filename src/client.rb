@@ -91,7 +91,9 @@ end
 #
 # -----------------------------------------------------------------------------------------
 def send_char(pkt, c)
-    
+    cfg = 
+
+    pkt.eth_saddr = @options[:ifconfig][:eth_saddr]
     pkt.ip_saddr = @options[:source_ip]
     pkt.ip_daddr = @options[:dest_ip]
     pkt.tcp_flags = PacketFu::TcpFlags.new(:syn => 1)
@@ -104,6 +106,8 @@ def send_char(pkt, c)
     pkt.tcp_win = (c * 20)/5 # our encryption for proof of concept * 20 and / 5
 
     pkt.recalc
+
+
     pkt.to_w(@options[:iface])
     sleep(@options[:delay].to_i)
   
@@ -118,6 +122,7 @@ end
 def send_fin()
     # Send FIN packet (to tell server we're done our command)
     pkt_f = PacketFu::TCPPacket.new
+    pkt_f.eth_saddr = @options[:ifconfig][:eth_saddr]   
     pkt_f.ip_saddr = @options[:source_ip]
     pkt_f.ip_daddr = @options[:dest_ip]
     pkt_f.tcp_flags = PacketFu::TcpFlags.new(:fin => 1)
@@ -180,11 +185,16 @@ optparser = OptionParser.new do | opts |
     opts.on('-p' '--dest-port DESTINATION PORT','The port the server is listening on.') do |p|
         @options[:dest_port] = p;    
     end
-
+    opts.on('-i' '--iface','The interface to send on.') do |i|
+        @options[:iface] = i;    
+    end
     opts.on('-z' '--sleep SLEEP_TIME','The port to send from.') do |z|
         @options[:delay] = z;    
     end
 
 end.parse! #optparse
+@options[:ifconfig] = PacketFu::Utils.whoami?(:iface => @options[:iface])
+
+
 
 prompt()
