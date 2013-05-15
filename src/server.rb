@@ -10,10 +10,12 @@ require 'packetfu'
 # Prints the application usage information.
 # 
 # -----------------------------------------------------------------------------------------
-def print_usage()
-    puts "Hello World"
-end
 
+def print_usage()
+    puts "ruby server.rb -p <listening port> -i <listening interface, default \"em1\">
+               -f <optional filter override (if using custom client, this may be useful)>"
+    exit()
+end
 # -----------------------------------------------------------------------------------------
 #	listen()
 #    
@@ -123,23 +125,16 @@ optparser = OptionParser.new do | opts |
     
     opts.on('-h', '--help','Display usage') do
         print_usage()    
-
-    end
-    opts.on('-s' '--source-ip SOURCE IP','The client\'s IP.') do |s|
-        @options[:source_ip] = s;    
-    end
-    opts.on('-d' '--dest-ip DESTINATION IP','The servers\'s IP.') do |d|
-        @options[:dest_ip] = d;    
-    end
-    opts.on('-p' '--port LISTEN PORT','The port to listen on.') do |p|
-        @options[:port] = p;    
-    end
-    opts.on('-i' '--iface INTERFACE','The interface to listen on.') do |i|
-        @options[:iface] = i;    
-    end
-    opts.on('-f' '--filter FiLTER','The filter to listen on. For optional override.') do |f|
-        @options[:filter] = f;    
-    end
+        end
+        opts.on('-p' '--port LISTEN PORT','The port to listen on.') do |p|
+            @options[:port] = p;    
+        end
+        opts.on('-i' '--iface INTERFACE','The interface to listen on.') do |i|
+            @options[:iface] = i;    
+        end
+        opts.on('-f' '--filter FiLTER','The filter to listen on. For optional override.') do |f|
+            @options[:filter] = f;    
+        end
 end.parse! #optparse
 
 raise "Must be run as root" unless Process.uid == 0
@@ -153,4 +148,5 @@ if @options[:filter] == '' then
 end
 puts @options[:filter]
 listen()
+
 

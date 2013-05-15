@@ -3,9 +3,6 @@ require 'rubygems'
 require 'optparse'
 require 'packetfu'
 
-
-
-
 # -----------------------------------------------------------------------------------------
 # print_usage()
 #
@@ -13,7 +10,11 @@ require 'packetfu'
 # 
 # -----------------------------------------------------------------------------------------
 def print_usage()
-    puts "Hello World"
+
+    puts "ruby client.rb -s <source ip for packet> -d <destination ip> -p <destination port>
+               -z <optional sleep time in seconds between each send> "
+    exit()
+
 end
 
 # -----------------------------------------------------------------------------------------
@@ -167,7 +168,7 @@ end
 optparser = OptionParser.new do | opts |
     
     opts.on('-h', '--help','Display usage') do
-        print_usage()    
+        print_usage()
 
     end
     opts.on('-s' '--source-ip SOURCE IP','The client\'s IP.') do |s|
@@ -179,15 +180,11 @@ optparser = OptionParser.new do | opts |
     opts.on('-p' '--dest-port DESTINATION PORT','The port the server is listening on.') do |p|
         @options[:dest_port] = p;    
     end
-    opts.on('-h' '--source-port SOURCE PORT','The port to send from.') do |h|
-        @options[:source_port] = h;    
-    end
+
     opts.on('-z' '--sleep SLEEP_TIME','The port to send from.') do |z|
         @options[:delay] = z;    
     end
-    opts.on('-f' '--filename FILE_NAME','The filename to send') do |f|
-        @options[:filename] = f;    
-    end
+
 end.parse! #optparse
 
 prompt()

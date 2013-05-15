@@ -1,0 +1,43 @@
+================================================================================
+                                Installation Documentation
+                               -----------------------------
+                            COMP 8505 - Assignment 2: Backdoor
+                            Developed and Designed by Andrew Maledy
+
+All code above is licenses under the GNU and may not be sold or redistributed 
+for profit. For more information regarding General Public Licensing see
+http://www.gnu.org/licenses/. 
+
+================================================================================
+Both the client and the server need the following to run:
+    - Ruby (1.9 or later recommended)
+    - Libpcap
+        - yum install libpcap
+        - yum install libpcap-devel
+    - Packetfu & pcaprub gems
+        - gem install packetfu (1.1.6 recommended)
+        - gem install pcaprub (0.11.3 recommended)
+
+To check what you gems you currently have installed:
+    - gem list 
+================================================================================
+                                        Usage
+                                       -------
+Once the above is installed, run the server via ruby
+================================================================================
+To view server.rb usage
+    - sudo ruby server.rb -h # 
+Outputs:
+    sudo ruby server.rb -p <listening port> -i <listening interface, default \"em1\">
+                        -f <optional filter override (if using custom client, this may be useful)>"
+
+To view client.rb usage
+    - sudo ruby client.rb -h # 
+
+Outputs:
+
+ruby client.rb -s <source ip for packet> -d <destination ip> -p <destination port>
+               -z <optional sleep time in seconds between each send> 
+               
+
+
