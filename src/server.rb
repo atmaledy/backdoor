@@ -151,10 +151,7 @@ if @options[:filter] == '' then
 
 end
 @options[:ifconfig] = PacketFu::Utils.whoami?(:iface => @options[:iface])
-begin
-    listen()
-rescue Interrupt => e
-    exit()
+listen()
 end
 
 
