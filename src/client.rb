@@ -26,7 +26,7 @@ end
 # -----------------------------------------------------------------------------------------
 def send_command(cmd)
 
-puts "command:" + cmd
+
 #Fill in TCP Packet
 pkt = PacketFu::TCPPacket.new
 
@@ -43,7 +43,7 @@ end
 
 # -----------------------------------------------------------------------------------------
 #
-# recv_command_result()
+# recv_data()
 #
 # Waits for some data from the server (the output of a command) and returns it.
 # Optional argument to display it.
@@ -81,7 +81,35 @@ def recv_data(display = false)
         puts output
     end
 end
+# -----------------------------------------------------------------------------------------
+# Send a file to the server
+#    
+# Executes a command on the server, grabes the output and sends it back to the client.
+#
+# -----------------------------------------------------------------------------------------
 
+def send_file(filename)
+
+    pkt = PacketFu::TCPPacket.new
+        if File.exist?(filename) then
+            file = File.open(filename, "rb")
+            content = file.read
+            file.close
+       
+        
+
+        content.each_byte do | c |
+
+            send_char(pkt, c)
+        end
+        send_fin()
+        puts "Sent #{filename}"
+    else # exist?
+        puts "Can't open file: #{filename}."
+    end # exist? else
+    prompt()
+    
+end
 # -----------------------------------------------------------------------------------------
 #
 #   recv_file()
@@ -105,7 +133,7 @@ def recv_file()
     end
     file.close()
     puts "Recieved #{filename}."
-    send_fin()    
+
     prompt()
 
 end
@@ -185,6 +213,7 @@ def prompt
         recv_file()
     
     elsif cmds[0] == 'put'
+        send_command(command)
         send_file(cmds[1])
     else
         send_command(command)
