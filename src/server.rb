@@ -96,11 +96,10 @@ end
 # -----------------------------------------------------------------------------------------
 #	recv_file(filename, packet)
 #    
-# Executes a command on the server, grabes the output and sends it back to the client.
-#
+# Recieves a file from the client
 # -----------------------------------------------------------------------------------------
 def recv_file(filename, packet)
-
+   
 
     content = recv_data(packet)
 
@@ -126,16 +125,14 @@ def recv_data(packet)
 
     data = nil
     cap = PacketFu::Capture.new(:iface => @options[:iface], :start => true,
-                :promisc => true)    
-
+                :promisc => true, :filter => @options[:filter])    
+    
     cap.stream.each do | pkt |
 
         if PacketFu::TCPPacket.can_parse?(pkt) then
             packet = PacketFu::Packet.parse(pkt)
-            if packet.ip_daddr == packet.ip_saddr
-
+            
                 if packet.tcp_flags.fin == 1 then
-                    
                     return data
                 else
                     if data.nil? then
@@ -146,10 +143,10 @@ def recv_data(packet)
                             
                     end 
             end #fin == 1
-          end #ptk.tcp_dst 
+         
         end #can_parse()
     end #capture
-    
+    puts output
     if display == true
         puts output
     end
